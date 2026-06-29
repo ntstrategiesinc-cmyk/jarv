@@ -1,0 +1,72 @@
+"""Load configuration (config.toml) and secrets (.env) into one frozen Config.
+
+config.toml holds human-editable settings; .env holds secrets (gitignored). Mutable
+runtime state (kill switch, schedules, inbox) lives in jarvis/state/*.json instead,
+because tomllib is read-only.
+"""
+
+from __future__ import annotations
+
+import os
+import tomllib
+from dataclasses import dataclass
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Repo root = the directory containing config.toml (parent of the jarvis package).
+ROOT = Path(__file__).resolve().parent.parent
+
+
+@dataclass(frozen=True)
+class Config:
+    """Parsed config.toml plus the repo root. Read-only.
+
+    Accessors are added per-tier as settings are needed; `data` exposes the raw tree
+    and `section()` is a safe getter for optional tables.
+    """
+
+    data: dict
+    root: Path
+
+    def section(self, name: str) -> dict:
+        return self.data.get(name, {})
+
+    # --- model / provider (Tier 1) ---
+    @property
+    def model_name(self) -> str:
+        return self.data["model"]["name"]
+
+    @property
+    def max_tokens(self) -> int:
+        return int(self.data["model"].get("max_tokens", 2048))
+
+    @property
+    def input_price_per_mtok(self) -> float:
+        return float(self.data["model"].get("input_price_per_mtok", 0.0))
+
+    @property
+    def output_price_per_mtok(self) -> float:
+        return float(self.data["model"].get("output_price_per_mtok", 0.0))
+
+    # --- persona (Tier 1) ---
+    @property
+    def persona_name(self) -> str:
+        return self.section("persona").get("name", "Jarvis")
+
+    @property
+    def persona_tone(self) -> str:
+        return self.section("persona").get("tone", "")
+
+
+def load_config(root: Path = ROOT) -> Config:
+    """Load .env (so os.getenv sees secrets) then parse config.toml."""
+    load_dotenv(root / ".env")
+    with open(root / "config.toml", "rb") as f:
+        data = tomllib.load(f)
+    return Config(data=data, root=root)
+
+
+def require_env(name: str) -> str | None:
+    """Return an env var or None. Callers decide how to handle a missing secret."""
+    return os.getenv(name)

@@ -1,0 +1,57 @@
+# Jarvis configuration — human-editable, read at startup.
+# Secrets do NOT live here; they live in .env (gitignored). See .env.example.
+# Mutable runtime state (kill switch, schedules, inbox) lives in jarvis/state/*.json,
+# because tomllib is read-only.
+
+[model]
+# The brain. Swappable behind the provider seam (jarvis/core/provider.py).
+name = "claude-opus-4-8"
+max_tokens = 2048
+# Per-million-token prices (USD) used only for the audit cost tally. Adjust to your plan.
+input_price_per_mtok = 5.0
+output_price_per_mtok = 25.0
+
+[persona]
+# Reinforces AGENT.md tone in the system prompt.
+name = "Jarvis"
+tone = "Crisp and professional. Efficient, businesslike, minimal small talk."
+
+[tools]
+# The hard confirmation gate (Tier 6). Any tool named here must get an explicit yes
+# before it runs, regardless of entry path (typed / spoken / heartbeat).
+# Read-only tools omitted here run freely.
+needs_confirmation = ["post_photo", "leads_add", "leads_update", "leads_delete"]
+# Seconds a heartbeat-initiated confirmation waits before timing out to a safe default (deny).
+# Typed/spoken confirmations wait for the human with no timeout.
+confirm_timeout_seconds = 120
+
+[leads]
+# Spreadsheet the lead tools read and write.
+workbook_path = "leads.xlsx"
+sheet_name = "Leads"
+
+[social]
+# Meta Graph API. Tokens/IDs live in .env, not here.
+graph_api_version = "v22.0"
+
+[voice]
+# Tier 3. voice_id chosen when wiring voice; kept here, not hardcoded.
+elevenlabs_voice_id = ""
+elevenlabs_model_id = "eleven_flash_v2_5"
+tts_sample_rate = 24000      # ElevenLabs pcm_24000 output
+stt_sample_rate = 16000      # mic capture rate sent to Deepgram
+deepgram_model = "nova-3"
+push_to_talk_key = "f9"      # non-printable key so it doesn't leak characters
+
+[heartbeat]
+# Tier 5. The background loop checks on this interval; individual checks set their own cadence.
+tick_seconds = 60
+quiet_hours_start = "22:00"  # non-urgent surfacing waits until quiet_hours_end
+quiet_hours_end = "08:00"
+misfire_grace_seconds = 300  # coalesce missed runs after wake-from-sleep into one
+
+# Example scheduled check (disabled by default). Add real checks here, not in code.
+# [[heartbeat.checks]]
+# name = "stale_leads"
+# every_minutes = 1440
+# enabled = false

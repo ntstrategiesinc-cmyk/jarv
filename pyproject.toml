@@ -1,0 +1,31 @@
+[project]
+name = "jarvis"
+version = "0.1.0"
+description = "Jarvis — a voice-first personal AI assistant harness"
+requires-python = ">=3.11"
+dependencies = [
+    # Tier 1 — brain
+    "anthropic==0.69.0",
+    "python-dotenv==1.0.1",
+    # Tier 2 — tools
+    "openpyxl==3.1.5",
+    "requests==2.32.3",
+    # Tier 3 — voice (pins finalized when reaching Tier 3; verified against installed pkg)
+    "deepgram-sdk>=4,<5",
+    "elevenlabs>=1.50",
+    "sounddevice>=0.5",
+    "numpy>=2.1",
+    "pynput>=1.7",
+    # Tier 5 — heartbeat
+    "APScheduler>=3.10,<4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.3.4"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["jarvis"]
