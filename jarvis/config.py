@@ -58,6 +58,29 @@ class Config:
     def persona_tone(self) -> str:
         return self.section("persona").get("tone", "")
 
+    # --- tools / leads / social (Tier 2) ---
+    @property
+    def leads_workbook_path(self) -> Path:
+        rel = self.section("leads").get("workbook_path", "leads.xlsx")
+        return self.root / rel
+
+    @property
+    def leads_sheet_name(self) -> str:
+        return self.section("leads").get("sheet_name", "Leads")
+
+    @property
+    def graph_api_version(self) -> str:
+        return self.section("social").get("graph_api_version", "v22.0")
+
+    # --- rails (Tier 6 reads these; defined early so the gate has them) ---
+    @property
+    def confirm_tools(self) -> list[str]:
+        return list(self.section("tools").get("needs_confirmation", []))
+
+    @property
+    def confirm_timeout_seconds(self) -> int:
+        return int(self.section("tools").get("confirm_timeout_seconds", 120))
+
 
 def load_config(root: Path = ROOT) -> Config:
     """Load .env (so os.getenv sees secrets) then parse config.toml."""

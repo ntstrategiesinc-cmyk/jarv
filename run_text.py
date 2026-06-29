@@ -14,7 +14,17 @@ import sys
 from jarvis.config import load_config
 from jarvis.core.agent import Agent
 from jarvis.core.provider import ModelProvider
+from jarvis.tools.registry import ToolRegistry
+from jarvis.tools.leads import build_leads_tools
+from jarvis.tools.social import build_social_tools
 from jarvis.adapters.text_repl import run_repl
+
+
+def build_registry(config) -> ToolRegistry:
+    registry = ToolRegistry()
+    registry.register_all(build_leads_tools(config))
+    registry.register_all(build_social_tools(config))
+    return registry
 
 
 def _force_utf8_console() -> None:
@@ -41,7 +51,7 @@ def main() -> int:
         model=config.model_name,
         max_tokens=config.max_tokens,
     )
-    agent = Agent(provider, config)
+    agent = Agent(provider, config, registry=build_registry(config))
     run_repl(agent, config)
     return 0
 
