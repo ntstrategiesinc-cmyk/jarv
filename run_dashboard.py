@@ -14,7 +14,7 @@ import sys
 import threading
 import webbrowser
 
-from jarvis.app import force_utf8_console
+from jarvis.app import force_utf8_console, missing_env
 from jarvis.config import load_config
 from jarvis.dashboard.server import create_app
 
@@ -25,12 +25,17 @@ PORT = 8765
 def main() -> int:
     force_utf8_console()
     config = load_config()
+
+    if missing_env(["ANTHROPIC_API_KEY"]):
+        print("Note: ANTHROPIC_API_KEY not set — the monitoring panel works, but chat won't reply.")
+
     app = create_app(config)
 
     url = f"http://{HOST}:{PORT}"
     print(f"{config.persona_name} dashboard at {url}   (Ctrl-C to stop)")
     threading.Timer(1.0, lambda: webbrowser.open(url)).start()
-    app.run(host=HOST, port=PORT, debug=False, use_reloader=False)
+    # threaded=True so a chat turn waiting on a browser confirmation doesn't block other requests.
+    app.run(host=HOST, port=PORT, debug=False, use_reloader=False, threaded=True)
     return 0
 
 

@@ -53,9 +53,16 @@ Leave it running; press **Ctrl-C** to stop. See what it surfaced with `/inbox` i
 & "C:\Users\tolno\jarv\.venv\Scripts\python.exe" "C:\Users\tolno\jarv\run_dashboard.py"
 ```
 
-Opens a web page (at `http://127.0.0.1:8765`) showing the proactive inbox, recent activity, model
-cost, your leads, and what Jarvis remembers — with buttons to **dismiss** items and **pause/resume**
-Jarvis. It refreshes itself every few seconds. Runs on your computer only (localhost), never online.
+Opens a web page (at `http://127.0.0.1:8765`) — a glowing Stark/JARVIS-style HUD showing the
+proactive inbox, recent activity, model cost, your leads, and what Jarvis remembers, with buttons
+to **dismiss** items and **pause/resume** Jarvis (click the arc-reactor core to toggle).
+
+It also has a **Console** where you can **chat with Jarvis right in the browser** — type a message
+and get a reply. When Jarvis wants to do something consequential, **Approve/Deny** buttons appear in
+the page (the same confirmation gate). Chat needs `ANTHROPIC_API_KEY` set; the rest of the panel
+works without it.
+
+Refreshes itself every few seconds. Runs on your computer only (localhost), never online.
 Press **Ctrl-C** in the window to stop it.
 
 ---
