@@ -46,7 +46,7 @@ elevenlabs_model_id = "eleven_flash_v2_5"
 tts_sample_rate = 24000      # ElevenLabs pcm_24000 output
 stt_sample_rate = 16000      # mic capture rate sent to Deepgram
 deepgram_model = "nova-3"
-push_to_talk_key = "f9"      # non-printable key so it doesn't leak characters
+push_to_talk_key = "tab"     # hold to talk (reliable on laptops; not a hardware F-key)
 
 [heartbeat]
 # Tier 5. The background loop wakes every tick_seconds; each check sets its own cadence.
