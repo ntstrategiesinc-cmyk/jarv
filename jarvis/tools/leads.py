@@ -185,6 +185,7 @@ def build_leads_tools(config: Config) -> list[Tool]:
             },
             handler=leads_list,
             needs_confirmation=False,
+            returns_external_content=True,
         ),
         Tool(
             name="leads_find",
@@ -196,6 +197,7 @@ def build_leads_tools(config: Config) -> list[Tool]:
             },
             handler=leads_find,
             needs_confirmation=False,
+            returns_external_content=True,
         ),
         Tool(
             name="leads_summarize",

@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Callable, Optional
 
 from ..config import Config
+from ..rails.sanitize import wrap_external
 from .conversation import Conversation
 from .provider import ModelProvider, ToolCall
 from .system_prompt import build_system_prompt
@@ -24,10 +25,12 @@ Approver = Callable[..., bool]
 
 
 class Agent:
-    def __init__(self, provider: ModelProvider, config: Config, registry=None):
+    def __init__(self, provider: ModelProvider, config: Config, registry=None, gate=None, audit=None):
         self.provider = provider
         self.config = config
         self.registry = registry
+        self.gate = gate    # ConfirmationGate (Tier 6); None falls back to the per-tool flag
+        self.audit = audit  # AuditLog (Tier 6); None disables logging/cost tally
 
     def run_turn(
         self,
@@ -48,6 +51,9 @@ class Agent:
                 tools=tools,
                 on_text=on_text,
             )
+
+            if self.audit and (result.usage.input_tokens or result.usage.output_tokens):
+                self.audit.record_usage(result.usage.input_tokens, result.usage.output_tokens)
 
             if result.error:
                 msg = f"(I couldn't complete that — {result.error}. Try again?)"
@@ -80,33 +86,42 @@ class Agent:
         if tool is None:
             return self._result_block(tc.id, f"No such tool: '{tc.name}'.", is_error=True)
 
-        if self._needs_confirmation(tool):
-            allowed = self._confirm(tool, tc.input, source, approver)
-            if not allowed:
-                return self._result_block(
-                    tc.id,
-                    "The user did not approve this action, so it was not run. Do not retry it; "
-                    "acknowledge and move on.",
-                    is_error=False,
-                )
+        if not self._approved(tool, tc.input, source, approver):
+            return self._result_block(
+                tc.id,
+                "The user did not approve this action, so it was not run. Do not retry it; "
+                "acknowledge and move on.",
+                is_error=False,
+            )
 
         try:
             res = tool.handler(tc.input)
         except Exception as e:  # last-resort guard; tools should return ToolResult.error themselves
-            return self._result_block(tc.id, f"{tc.name} failed unexpectedly: {e}", is_error=True)
-        return self._result_block(tc.id, res.content, is_error=not res.ok)
+            res_content, res_ok = f"{tc.name} failed unexpectedly: {e}", False
+        else:
+            res_content, res_ok = res.content, res.ok
 
-    def _needs_confirmation(self, tool) -> bool:
-        """Tier 2: the tool's own flag. Tier 6 also honors config.toml's needs_confirmation list."""
-        if tool.name in self.config.confirm_tools:
+        if self.audit:
+            self.audit.record_tool_run(tool.name, source, res_ok)
+
+        # Fence content read from outside the conversation so injected text can't act as commands.
+        if getattr(tool, "returns_external_content", False) and res_ok:
+            res_content = wrap_external(res_content, source=tool.name)
+
+        return self._result_block(tc.id, res_content, is_error=not res_ok)
+
+    def _approved(self, tool, tool_input: dict, source: str, approver: Optional[Approver]) -> bool:
+        """The single confirmation point. Delegates to the Tier 6 gate when present; otherwise
+        falls back to the per-tool flag (Tier 2 behavior). Safe default is DENY."""
+        if self.gate is not None:
+            return self.gate.decide(tool, tool_input, source, approver)
+        # Fallback: no gate wired.
+        needs = tool.name in self.config.confirm_tools or tool.needs_confirmation
+        if not needs:
             return True
-        return tool.needs_confirmation
-
-    def _confirm(self, tool, tool_input: dict, source: str, approver: Optional[Approver]) -> bool:
-        """The single confirmation point. With no approver wired, default to DENY (safe)."""
         if approver is None:
             return False
-        return bool(approver(tool, tool_input, source=source))
+        return bool(approver(tool, tool_input, source=source, timeout=None))
 
     @staticmethod
     def _result_block(tool_use_id: str, content: str, is_error: bool) -> dict:

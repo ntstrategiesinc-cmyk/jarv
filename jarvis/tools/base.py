@@ -34,6 +34,9 @@ class Tool:
     # Consequential tools (send/post/spend/delete/change-a-setting) default to True.
     # Tier 6's gate also consults config.toml so this can be tuned without code edits.
     needs_confirmation: bool = False
+    # True when the tool surfaces content from outside this conversation (stored notes, files,
+    # web pages). Tier 6 fences such output as untrusted data to blunt prompt injection.
+    returns_external_content: bool = False
 
     def to_api(self) -> dict:
         return {

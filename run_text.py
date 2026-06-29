@@ -17,6 +17,9 @@ from jarvis.core.provider import ModelProvider
 from jarvis.tools.registry import ToolRegistry
 from jarvis.tools.leads import build_leads_tools
 from jarvis.tools.social import build_social_tools
+from jarvis.rails.audit import AuditLog
+from jarvis.rails.killswitch import KillSwitch
+from jarvis.rails.gate import ConfirmationGate
 from jarvis.adapters.text_repl import run_repl
 
 
@@ -51,8 +54,18 @@ def main() -> int:
         model=config.model_name,
         max_tokens=config.max_tokens,
     )
-    agent = Agent(provider, config, registry=build_registry(config))
-    run_repl(agent, config)
+
+    # Tier 6 rails: kill switch, audit log + cost tally, and the single confirmation gate.
+    killswitch = KillSwitch(config.state_dir / "killswitch.json")
+    audit = AuditLog(
+        config.state_dir / "audit.log",
+        input_price_per_mtok=config.input_price_per_mtok,
+        output_price_per_mtok=config.output_price_per_mtok,
+    )
+    gate = ConfirmationGate(config, killswitch, audit)
+
+    agent = Agent(provider, config, registry=build_registry(config), gate=gate, audit=audit)
+    run_repl(agent, config, killswitch, audit)
     return 0
 
 

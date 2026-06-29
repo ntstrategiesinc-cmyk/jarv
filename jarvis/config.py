@@ -32,6 +32,13 @@ class Config:
     def section(self, name: str) -> dict:
         return self.data.get(name, {})
 
+    @property
+    def state_dir(self) -> Path:
+        """Durable runtime state (kill switch, schedules, inbox, audit log). Gitignored."""
+        d = self.root / "jarvis" / "state"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
     # --- model / provider (Tier 1) ---
     @property
     def model_name(self) -> str:
