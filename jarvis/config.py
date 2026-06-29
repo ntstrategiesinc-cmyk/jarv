@@ -110,6 +110,10 @@ class Config:
     def push_to_talk_key(self) -> str:
         return self.section("voice").get("push_to_talk_key", "f9")
 
+    @property
+    def voice_input_mode(self) -> str:
+        return self.section("voice").get("input_mode", "enter")
+
     # --- heartbeat (Tier 5) ---
     @property
     def heartbeat_tick_seconds(self) -> int:

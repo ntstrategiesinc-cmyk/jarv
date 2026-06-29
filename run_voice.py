@@ -33,7 +33,6 @@ def main() -> int:
     # Import voice deps lazily so the text path never depends on audio libraries being importable.
     import os
 
-    from jarvis.adapters.voice.session import VoiceSession
     from jarvis.adapters.voice.stt import SpeechToText
     from jarvis.adapters.voice.tts import TextToSpeech
 
@@ -44,7 +43,15 @@ def main() -> int:
         config.elevenlabs_model_id,
         config.tts_sample_rate,
     )
-    VoiceSession(core.agent, config, stt, tts, core.killswitch, core.audit).run()
+
+    # Pick the input mechanism. "enter" needs no global hotkey (most reliable); "ptt" holds a key.
+    if config.voice_input_mode == "ptt":
+        from jarvis.adapters.voice.session import VoiceSession
+        session = VoiceSession(core.agent, config, stt, tts, core.killswitch, core.audit)
+    else:
+        from jarvis.adapters.voice.console_session import EnterVoiceSession
+        session = EnterVoiceSession(core.agent, config, stt, tts, core.killswitch, core.audit)
+    session.run()
     return 0
 
 

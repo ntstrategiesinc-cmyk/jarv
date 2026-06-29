@@ -40,6 +40,10 @@ path = "jarvis/memory/memory.md"
 graph_api_version = "v22.0"
 
 [voice]
+# How a spoken turn is triggered:
+#   "enter" = press Enter to start recording, Enter again to stop (no global hotkey; most reliable)
+#   "ptt"   = hold push_to_talk_key to talk (needs pynput to capture keys in your terminal)
+input_mode = "enter"
 # Tier 3. voice_id chosen when wiring voice; kept here, not hardcoded.
 elevenlabs_voice_id = "pNInz6obpgDQGcFmaJgB"  # ElevenLabs premade "Adam" (free-tier accessible)
 elevenlabs_model_id = "eleven_flash_v2_5"
