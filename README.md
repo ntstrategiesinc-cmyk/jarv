@@ -47,6 +47,17 @@ best way to use Jarvis when you don't want to talk.
 Runs in its own window and checks things on a schedule, holding anything noteworthy in an inbox.
 Leave it running; press **Ctrl-C** to stop. See what it surfaced with `/inbox` in the text app.
 
+### 📊 The dashboard (optional)
+
+```
+& "C:\Users\tolno\jarv\.venv\Scripts\python.exe" "C:\Users\tolno\jarv\run_dashboard.py"
+```
+
+Opens a web page (at `http://127.0.0.1:8765`) showing the proactive inbox, recent activity, model
+cost, your leads, and what Jarvis remembers — with buttons to **dismiss** items and **pause/resume**
+Jarvis. It refreshes itself every few seconds. Runs on your computer only (localhost), never online.
+Press **Ctrl-C** in the window to stop it.
+
 ---
 
 ## Commands (type these in the text app)
@@ -129,8 +140,9 @@ jarvis/
   memory/      durable facts (memory.md)
   adapters/    ways in/out: text REPL, voice (push-to-talk + keyboard-free)
   heartbeat/   proactive loop: scheduler, checks, dismissible inbox, quiet hours
+  dashboard/   local Flask web panel reading the shared state files
   app.py       build_core(): assembles the one core all entry points share
-run_text.py / run_voice.py / run_heartbeat.py   entry points
+run_text.py / run_voice.py / run_heartbeat.py / run_dashboard.py   entry points
 ```
 
 The model provider, speech-to-text, and text-to-speech each sit behind a thin seam so any one can

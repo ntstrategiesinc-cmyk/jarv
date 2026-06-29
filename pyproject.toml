@@ -18,6 +18,8 @@ dependencies = [
     "pynput==1.8.2",
     # Tier 5 — heartbeat
     "APScheduler==3.11.0",
+    # Dashboard — local web monitoring panel
+    "Flask==3.1.0",
 ]
 
 [project.optional-dependencies]
