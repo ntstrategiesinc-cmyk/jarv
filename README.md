@@ -57,10 +57,15 @@ Opens a web page (at `http://127.0.0.1:8765`) — a glowing Stark/JARVIS-style H
 proactive inbox, recent activity, model cost, your leads, and what Jarvis remembers, with buttons
 to **dismiss** items and **pause/resume** Jarvis (click the arc-reactor core to toggle).
 
-It also has a **Console** where you can **chat with Jarvis right in the browser** — type a message
-and get a reply. When Jarvis wants to do something consequential, **Approve/Deny** buttons appear in
-the page (the same confirmation gate). Chat needs `ANTHROPIC_API_KEY` set; the rest of the panel
-works without it.
+It also has a **Console** where you can **talk to Jarvis right in the browser**:
+- **Type** a message and press Enter, or
+- Click **🎤 Talk** to speak — it records your mic, transcribes it, and Jarvis **replies out loud**
+  in the page. (Your browser will ask for microphone permission the first time — click Allow.)
+
+When Jarvis wants to do something consequential, **Approve/Deny** buttons appear in the page (the
+same confirmation gate). Chat needs `ANTHROPIC_API_KEY`; the 🎤 Talk button needs `DEEPGRAM_API_KEY`
+and `ELEVENLABS_API_KEY` (it hides itself if those aren't set). The rest of the panel works without
+any keys.
 
 Refreshes itself every few seconds. Runs on your computer only (localhost), never online.
 Press **Ctrl-C** in the window to stop it.

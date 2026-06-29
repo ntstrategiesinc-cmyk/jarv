@@ -30,15 +30,26 @@ class SpeechToText:
         return buf.getvalue()
 
     def transcribe(self, pcm: bytes) -> str:
+        """Transcribe raw 16-bit mono PCM (from the desktop mic) by wrapping it in a WAV."""
         if not pcm:
             return ""
         resp = self._client.listen.v1.media.transcribe_file(
-            request=self._to_wav(pcm),
-            model=self.model,
-            smart_format=True,
-            punctuate=True,
-            language="en",
+            request=self._to_wav(pcm), model=self.model, smart_format=True, punctuate=True, language="en"
         )
+        return self._parse(resp)
+
+    def transcribe_audio(self, data: bytes) -> str:
+        """Transcribe a containerized audio file (webm/opus, mp3, wav, ...) as sent by a browser.
+        Deepgram detects the container, so no encoding/sample_rate is needed."""
+        if not data:
+            return ""
+        resp = self._client.listen.v1.media.transcribe_file(
+            request=data, model=self.model, smart_format=True, punctuate=True, language="en"
+        )
+        return self._parse(resp)
+
+    @staticmethod
+    def _parse(resp) -> str:
         # Standard Deepgram shape: results.channels[0].alternatives[0].transcript.
         try:
             return (resp.results.channels[0].alternatives[0].transcript or "").strip()

@@ -9,10 +9,11 @@ to a safe default, so a forgotten browser never hangs the agent forever).
 from __future__ import annotations
 
 import json
+import os
 import threading
 from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request
 
 from ..app import build_core
 from ..config import Config
@@ -104,6 +105,16 @@ def create_app(config: Config) -> Flask:
     core = build_core(config)            # the SAME core text/voice use (brain, tools, rails, memory)
     session = ChatSession(core.agent)
 
+    # Voice seams for the browser mic (optional — only if the keys are present).
+    stt = tts = None
+    if os.getenv("DEEPGRAM_API_KEY"):
+        from ..adapters.voice.stt import SpeechToText
+        stt = SpeechToText(os.getenv("DEEPGRAM_API_KEY", ""), config.deepgram_model, config.stt_sample_rate)
+    if os.getenv("ELEVENLABS_API_KEY") and config.elevenlabs_voice_id:
+        from ..adapters.voice.tts import TextToSpeech
+        tts = TextToSpeech(os.getenv("ELEVENLABS_API_KEY", ""), config.elevenlabs_voice_id,
+                           config.elevenlabs_model_id, config.tts_sample_rate)
+
     def web_approver(tool, tool_input, source="dashboard", timeout=None) -> bool:
         """Surface the pending action to the browser and wait for an Approve/Deny click."""
         session.decision = False
@@ -166,6 +177,45 @@ def create_app(config: Config) -> Flask:
         session.decision = bool(data.get("decision"))
         session.event.set()
         return jsonify({"ok": True})
+
+    @app.post("/api/voice")
+    def api_voice():
+        if stt is None:
+            return jsonify({"error": "voice not configured (DEEPGRAM_API_KEY missing)"}), 400
+        audio = request.get_data()
+        if not audio:
+            return jsonify({"error": "no audio"}), 400
+        try:
+            transcript = stt.transcribe_audio(audio)
+        except Exception as e:
+            return jsonify({"error": f"transcription failed: {str(e)[:200]}"}), 500
+        if not transcript.strip():
+            return jsonify({"transcript": "", "reply": "(didn't catch that — try again)"})
+        if not session.lock.acquire(blocking=False):
+            return jsonify({"error": "busy"}), 409
+        try:
+            session.conversation.add_user_text(transcript)
+            reply = session.agent.run_turn(session.conversation, source="dashboard", approver=web_approver)
+            return jsonify({"transcript": transcript, "reply": reply})
+        finally:
+            session.lock.release()
+
+    @app.post("/api/tts")
+    def api_tts():
+        if tts is None:
+            return jsonify({"error": "tts not configured"}), 400
+        text = ((request.get_json(silent=True) or {}).get("text") or "").strip()
+        if not text:
+            return ("", 204)
+        try:
+            audio = tts.synthesize_mp3(text)
+        except Exception as e:
+            return jsonify({"error": str(e)[:200]}), 500
+        return Response(audio, mimetype="audio/mpeg")
+
+    @app.get("/api/voice_enabled")
+    def api_voice_enabled():
+        return jsonify({"stt": stt is not None, "tts": tts is not None})
 
     return app
 
@@ -263,6 +313,8 @@ PAGE = """<!doctype html>
   .chatin input{flex:1;background:rgba(0,0,0,.3);border:1px solid var(--line);color:var(--cy2);
                 font-family:"Share Tech Mono",monospace;font-size:14px;padding:10px 12px;outline:none;}
   .chatin input:focus{border-color:var(--cy);box-shadow:0 0 8px var(--glow);}
+  #micbtn.recording{border-color:var(--bad);color:var(--bad);box-shadow:0 0 10px rgba(255,77,99,.6);
+    animation:pulse 1.2s ease-in-out infinite;}
 </style>
 </head>
 <body>
@@ -321,6 +373,7 @@ PAGE = """<!doctype html>
     <div class="chatin">
       <input id="chatmsg" placeholder="Message Jarvis…  (e.g. add a lead named Sam for roofing)" autocomplete="off"
              onkeydown="if(event.key==='Enter')sendChat()">
+      <button id="micbtn" onclick="toggleVoice()">🎤 Talk</button>
       <button onclick="sendChat()">Send</button>
     </div>
   </div>
@@ -391,6 +444,45 @@ async function sendChat(){
   }catch(e){think.textContent='(could not reach Jarvis)';think.className='bub sys';}
   chatBusy=false; fastPoll(false); load();
 }
+// ---- browser voice ----
+let mediaRec=null, chunks=[], recording=false;
+function setMicUI(on){const b=document.getElementById('micbtn');
+  b.textContent=on?'■ Stop':'🎤 Talk'; b.classList.toggle('recording',on);}
+async function toggleVoice(){
+  if(recording){ if(mediaRec)mediaRec.stop(); return; }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){addBubble('sys','(this browser has no mic access)');return;}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRec=new MediaRecorder(stream); chunks=[];
+    mediaRec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+    mediaRec.onstop=async()=>{ recording=false; setMicUI(false);
+      stream.getTracks().forEach(t=>t.stop());
+      const blob=new Blob(chunks,{type:mediaRec.mimeType||'audio/webm'});
+      await sendVoice(blob); };
+    mediaRec.start(); recording=true; setMicUI(true);
+  }catch(e){ addBubble('sys','(microphone blocked — allow mic access for this page)'); }
+}
+async function sendVoice(blob){
+  chatBusy=true; const ind=addBubble('sys','transcribing…'); fastPoll(true);
+  try{
+    const r=await fetch('/api/voice',{method:'POST',headers:{'Content-Type':blob.type||'audio/webm'},body:blob});
+    const d=await r.json(); ind.remove();
+    if(d.transcript) addBubble('you',d.transcript);
+    addBubble(d.reply?'jarvis':'sys', d.reply||('('+(d.error||'no reply')+')'));
+    if(d.reply) speak(d.reply);
+  }catch(e){ ind.textContent='(voice error)'; ind.className='bub sys'; }
+  chatBusy=false; fastPoll(false); load();
+}
+async function speak(text){
+  try{
+    const r=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+    if(!r.ok) return;
+    const blob=await r.blob(); const a=new Audio(URL.createObjectURL(blob)); a.play().catch(()=>{});
+  }catch(e){}
+}
+// hide the Talk button if the server has no STT configured
+fetch('/api/voice_enabled').then(r=>r.json()).then(v=>{ if(!v.stt) document.getElementById('micbtn').style.display='none'; }).catch(()=>{});
+
 document.getElementById('reactor').onclick=togglePause;
 tick();setInterval(tick,1000); load();setInterval(load,3000);
 </script>

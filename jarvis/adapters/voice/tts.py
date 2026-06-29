@@ -21,10 +21,17 @@ class TextToSpeech:
         self.sample_rate = sample_rate
 
     def synthesize_stream(self, text: str) -> Iterator[bytes]:
-        """Yield raw little-endian 16-bit PCM chunks at self.sample_rate."""
+        """Yield raw little-endian 16-bit PCM chunks at self.sample_rate (for desktop playback)."""
         return self._client.text_to_speech.stream(
             self.voice_id,
             text=text,
             model_id=self.model_id,
             output_format=f"pcm_{self.sample_rate}",
         )
+
+    def synthesize_mp3(self, text: str) -> bytes:
+        """Return the whole reply as MP3 bytes — what a browser <audio> element can play directly."""
+        chunks = self._client.text_to_speech.convert(
+            self.voice_id, text=text, model_id=self.model_id, output_format="mp3_44100_128"
+        )
+        return b"".join(chunks)
