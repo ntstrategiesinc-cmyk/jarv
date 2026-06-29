@@ -41,7 +41,7 @@ graph_api_version = "v22.0"
 
 [voice]
 # Tier 3. voice_id chosen when wiring voice; kept here, not hardcoded.
-elevenlabs_voice_id = ""
+elevenlabs_voice_id = "pNInz6obpgDQGcFmaJgB"  # ElevenLabs premade "Adam" (free-tier accessible)
 elevenlabs_model_id = "eleven_flash_v2_5"
 tts_sample_rate = 24000      # ElevenLabs pcm_24000 output
 stt_sample_rate = 16000      # mic capture rate sent to Deepgram
