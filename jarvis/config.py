@@ -79,6 +79,12 @@ class Config:
     def graph_api_version(self) -> str:
         return self.section("social").get("graph_api_version", "v22.0")
 
+    # --- memory (Tier 4) ---
+    @property
+    def memory_path(self) -> Path:
+        rel = self.section("memory").get("path", "jarvis/memory/memory.md")
+        return self.root / rel
+
     # --- rails (Tier 6 reads these; defined early so the gate has them) ---
     @property
     def confirm_tools(self) -> list[str]:

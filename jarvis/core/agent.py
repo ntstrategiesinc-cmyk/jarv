@@ -25,12 +25,13 @@ Approver = Callable[..., bool]
 
 
 class Agent:
-    def __init__(self, provider: ModelProvider, config: Config, registry=None, gate=None, audit=None):
+    def __init__(self, provider: ModelProvider, config: Config, registry=None, gate=None, audit=None, memory=None):
         self.provider = provider
         self.config = config
         self.registry = registry
         self.gate = gate    # ConfirmationGate (Tier 6); None falls back to the per-tool flag
         self.audit = audit  # AuditLog (Tier 6); None disables logging/cost tally
+        self.memory = memory  # MemoryStore (Tier 4); facts loaded into the system prompt each turn
 
     def run_turn(
         self,
@@ -41,7 +42,8 @@ class Agent:
     ) -> str:
         """Run one turn to completion, including any number of tool calls. Returns the
         assistant's final text."""
-        system = build_system_prompt(self.config)
+        facts = self.memory.facts() if self.memory else None
+        system = build_system_prompt(self.config, memory_facts=facts)
         tools = self.registry.to_api() if self.registry else []
 
         while True:

@@ -36,5 +36,6 @@ env/
 # Jarvis runtime state & data (never commit secrets or live data)
 jarvis/state/
 state/
+jarvis/memory/memory.md
 *.xlsx
 !leads.example.xlsx

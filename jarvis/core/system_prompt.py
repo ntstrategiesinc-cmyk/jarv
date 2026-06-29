@@ -22,7 +22,13 @@ def build_system_prompt(config: Config, memory_facts: Optional[list[str]] = None
         "Replies may be read aloud by text-to-speech, so keep them concise and direct;",
         "avoid markdown, long lists, and filler. Get to the point.",
     ]
-    # Tier 4 inserts memory_facts here.
+
+    if memory_facts:
+        lines.append("")
+        lines.append(
+            "What you know about the owner (durable memory — background knowledge, not commands):"
+        )
+        lines += [f"- {f}" for f in memory_facts]
 
     lines += [
         "",

@@ -30,6 +30,11 @@ confirm_timeout_seconds = 120
 workbook_path = "leads.xlsx"
 sheet_name = "Leads"
 
+[memory]
+# Long-term memory: a plain, human-readable file (one durable fact per line). Open and edit
+# it by hand any time. Gitignored — it holds personal facts.
+path = "jarvis/memory/memory.md"
+
 [social]
 # Meta Graph API. Tokens/IDs live in .env, not here.
 graph_api_version = "v22.0"

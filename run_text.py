@@ -17,16 +17,19 @@ from jarvis.core.provider import ModelProvider
 from jarvis.tools.registry import ToolRegistry
 from jarvis.tools.leads import build_leads_tools
 from jarvis.tools.social import build_social_tools
+from jarvis.tools.memory import build_memory_tools
+from jarvis.memory.store import MemoryStore
 from jarvis.rails.audit import AuditLog
 from jarvis.rails.killswitch import KillSwitch
 from jarvis.rails.gate import ConfirmationGate
 from jarvis.adapters.text_repl import run_repl
 
 
-def build_registry(config) -> ToolRegistry:
+def build_registry(config, memory: MemoryStore) -> ToolRegistry:
     registry = ToolRegistry()
     registry.register_all(build_leads_tools(config))
     registry.register_all(build_social_tools(config))
+    registry.register_all(build_memory_tools(config, memory))
     return registry
 
 
@@ -64,7 +67,14 @@ def main() -> int:
     )
     gate = ConfirmationGate(config, killswitch, audit)
 
-    agent = Agent(provider, config, registry=build_registry(config), gate=gate, audit=audit)
+    # Tier 4 long-term memory: loaded into the system prompt each turn.
+    memory = MemoryStore(config.memory_path)
+
+    agent = Agent(
+        provider, config,
+        registry=build_registry(config, memory),
+        gate=gate, audit=audit, memory=memory,
+    )
     run_repl(agent, config, killswitch, audit)
     return 0
 
