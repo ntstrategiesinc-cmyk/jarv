@@ -110,6 +110,27 @@ class Config:
     def push_to_talk_key(self) -> str:
         return self.section("voice").get("push_to_talk_key", "f9")
 
+    # --- heartbeat (Tier 5) ---
+    @property
+    def heartbeat_tick_seconds(self) -> int:
+        return int(self.section("heartbeat").get("tick_seconds", 60))
+
+    @property
+    def heartbeat_misfire_seconds(self) -> int:
+        return int(self.section("heartbeat").get("misfire_grace_seconds", 300))
+
+    @property
+    def quiet_hours_start(self) -> str:
+        return self.section("heartbeat").get("quiet_hours_start", "22:00")
+
+    @property
+    def quiet_hours_end(self) -> str:
+        return self.section("heartbeat").get("quiet_hours_end", "08:00")
+
+    @property
+    def heartbeat_checks(self) -> list[dict]:
+        return list(self.section("heartbeat").get("checks", []))
+
     # --- rails (Tier 6 reads these; defined early so the gate has them) ---
     @property
     def confirm_tools(self) -> list[str]:

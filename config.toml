@@ -49,14 +49,32 @@ deepgram_model = "nova-3"
 push_to_talk_key = "f9"      # non-printable key so it doesn't leak characters
 
 [heartbeat]
-# Tier 5. The background loop checks on this interval; individual checks set their own cadence.
+# Tier 5. The background loop wakes every tick_seconds; each check sets its own cadence.
 tick_seconds = 60
 quiet_hours_start = "22:00"  # non-urgent surfacing waits until quiet_hours_end
 quiet_hours_end = "08:00"
 misfire_grace_seconds = 300  # coalesce missed runs after wake-from-sleep into one
 
-# Example scheduled check (disabled by default). Add real checks here, not in code.
-# [[heartbeat.checks]]
-# name = "stale_leads"
-# every_minutes = 1440
-# enabled = false
+# Scheduled checks live here, not in code. Each: a unique name, a `type` (which check function),
+# how often (every_minutes), enabled, severity ("alert" may interrupt; "notice" stays quiet in the
+# inbox), plus check-specific fields.
+
+# Triggerable test check: drop a file at jarvis/state/heartbeat_trigger.txt and the next tick
+# surfaces it once (the file is consumed). Handy for verifying the loop.
+[[heartbeat.checks]]
+name = "trigger_file"
+type = "watch_file"
+enabled = true
+every_minutes = 1
+file = "heartbeat_trigger.txt"
+severity = "alert"
+title = "Manual trigger detected"
+
+# Real example: leads still marked "new" older than N days need follow-up. Quiet by default.
+[[heartbeat.checks]]
+name = "stale_leads"
+type = "stale_leads"
+enabled = false
+every_minutes = 1440
+older_than_days = 7
+severity = "notice"

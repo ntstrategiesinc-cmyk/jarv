@@ -12,6 +12,7 @@ import sys
 from ..config import Config
 from ..core.agent import Agent
 from ..core.conversation import Conversation
+from ..heartbeat.inbox import Inbox
 from ..rails.audit import AuditLog
 from ..rails.killswitch import KillSwitch
 
@@ -36,31 +37,54 @@ def make_console_approver(name: str):
     return approver
 
 
-def _handle_command(cmd: str, killswitch: KillSwitch, audit: AuditLog) -> bool:
+def _handle_command(cmd: str, killswitch: KillSwitch, audit: AuditLog, inbox: Inbox) -> bool:
     """Handle a /slash command. Returns True if it was a command (and was handled)."""
-    cmd = cmd.lower()
-    if cmd in {"/pause", "/stop"}:
+    parts = cmd.split()
+    head = parts[0].lower()
+    if head in {"/pause", "/stop"}:
         killswitch.pause()
         audit.record_event("killswitch", state="paused", source="typed")
         print("  proactive behavior PAUSED (you can still chat). /resume to re-enable.")
-    elif cmd in {"/resume", "/start"}:
+    elif head in {"/resume", "/start"}:
         killswitch.resume()
         audit.record_event("killswitch", state="resumed", source="typed")
         print("  proactive behavior RESUMED.")
-    elif cmd == "/status":
+    elif head == "/status":
         paused = "PAUSED" if killswitch.is_paused() else "active"
         print(f"  proactive: {paused}")
         print(
             f"  session cost: ${audit.session_cost_usd:.4f} "
             f"({audit.session_input_tokens} in / {audit.session_output_tokens} out tokens)"
         )
-    elif cmd == "/audit":
+    elif head == "/inbox":
+        items = inbox.pending()
+        if not items:
+            print("  inbox empty.")
+        else:
+            print(f"  {len(items)} item(s) waiting:")
+            for i in items:
+                line = f"    #{i['id']} [{i.get('severity', 'notice')}] {i.get('title', '')}"
+                if i.get("body"):
+                    line += f" — {i['body']}"
+                print(line + f"   ({i.get('ts', '')})")
+            print("  dismiss with /dismiss <id> or /dismiss all")
+    elif head == "/dismiss":
+        if len(parts) < 2:
+            print("  usage: /dismiss <id> | /dismiss all")
+        else:
+            target = "all" if parts[1].lower() == "all" else int(parts[1]) if parts[1].isdigit() else None
+            if target is None:
+                print("  give a numeric id or 'all'.")
+            else:
+                n = inbox.dismiss(target)
+                print(f"  dismissed {n} item(s).")
+    elif head == "/audit":
         lines = audit.tail(10)
         print("  last audit entries:" if lines else "  (audit log empty)")
         for line in lines:
             print(f"    {line}")
-    elif cmd == "/help":
-        print("  commands: /pause  /resume  /status  /audit  /help  exit")
+    elif head == "/help":
+        print("  commands: /pause  /resume  /status  /inbox  /dismiss <id|all>  /audit  /help  exit")
     else:
         return False
     return True
@@ -68,10 +92,16 @@ def _handle_command(cmd: str, killswitch: KillSwitch, audit: AuditLog) -> bool:
 
 def run_repl(agent: Agent, config: Config, killswitch: KillSwitch, audit: AuditLog) -> None:
     name = config.persona_name
-    print(f"{name} — text mode. Type a message, /help for commands, or 'exit' to quit.\n")
+    inbox = Inbox(config.state_dir / "inbox.json")
 
     conversation = Conversation()
     approver = make_console_approver(name)
+
+    pending = inbox.pending()
+    print(f"{name} — text mode. Type a message, /help for commands, or 'exit' to quit.")
+    if pending:
+        print(f"[heartbeat] {len(pending)} item(s) waiting — type /inbox to see them.")
+    print()
 
     def on_text(delta: str) -> None:
         sys.stdout.write(delta)
@@ -79,7 +109,8 @@ def run_repl(agent: Agent, config: Config, killswitch: KillSwitch, audit: AuditL
 
     while True:
         try:
-            user = input("you > ").strip()
+            # lstrip a stray BOM (escape form) so slash-commands are recognized even if piped.
+            user = input("you > ").lstrip("﻿").strip()
         except (EOFError, KeyboardInterrupt):
             print("\nbye.")
             return
@@ -90,7 +121,7 @@ def run_repl(agent: Agent, config: Config, killswitch: KillSwitch, audit: AuditL
             print("bye.")
             return
         if user.startswith("/"):
-            if not _handle_command(user, killswitch, audit):
+            if not _handle_command(user, killswitch, audit, inbox):
                 print("  unknown command. /help for the list.")
             continue
 

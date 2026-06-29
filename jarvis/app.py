@@ -33,12 +33,18 @@ class Core:
 
 
 def force_utf8_console() -> None:
-    """Windows consoles default to cp1252; streamed model/voice output would crash on Unicode."""
+    """Windows consoles default to cp1252; streamed model/voice output would crash on Unicode,
+    and piped stdin would mis-decode a leading BOM. Force UTF-8 on all three streams."""
     for stream in (sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")
         except (AttributeError, ValueError):
             pass
+    try:
+        # utf-8-sig auto-strips a leading BOM (e.g. from PowerShell-piped input).
+        sys.stdin.reconfigure(encoding="utf-8-sig", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 
 def missing_env(names: list[str]) -> list[str]:
