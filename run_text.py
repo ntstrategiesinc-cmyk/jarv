@@ -8,74 +8,24 @@ Requires ANTHROPIC_API_KEY in .env (copy .env.example to .env first).
 
 from __future__ import annotations
 
-import os
 import sys
 
+from jarvis.app import build_core, force_utf8_console, missing_env
 from jarvis.config import load_config
-from jarvis.core.agent import Agent
-from jarvis.core.provider import ModelProvider
-from jarvis.tools.registry import ToolRegistry
-from jarvis.tools.leads import build_leads_tools
-from jarvis.tools.social import build_social_tools
-from jarvis.tools.memory import build_memory_tools
-from jarvis.memory.store import MemoryStore
-from jarvis.rails.audit import AuditLog
-from jarvis.rails.killswitch import KillSwitch
-from jarvis.rails.gate import ConfirmationGate
 from jarvis.adapters.text_repl import run_repl
 
 
-def build_registry(config, memory: MemoryStore) -> ToolRegistry:
-    registry = ToolRegistry()
-    registry.register_all(build_leads_tools(config))
-    registry.register_all(build_social_tools(config))
-    registry.register_all(build_memory_tools(config, memory))
-    return registry
-
-
-def _force_utf8_console() -> None:
-    """Windows consoles default to cp1252; streamed model output (em-dashes, smart quotes,
-    emoji) would raise UnicodeEncodeError and crash mid-reply. Force UTF-8 on the streams."""
-    for stream in (sys.stdout, sys.stderr):
-        try:
-            stream.reconfigure(encoding="utf-8", errors="replace")
-        except (AttributeError, ValueError):
-            pass
-
-
 def main() -> int:
-    _force_utf8_console()
+    force_utf8_console()
     config = load_config()
 
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("ANTHROPIC_API_KEY is not set. Copy .env.example to .env and add your key.")
+    missing = missing_env(["ANTHROPIC_API_KEY"])
+    if missing:
+        print(f"Missing in .env: {', '.join(missing)}. Copy .env.example to .env and fill it in.")
         return 1
 
-    provider = ModelProvider(
-        api_key=api_key,
-        model=config.model_name,
-        max_tokens=config.max_tokens,
-    )
-
-    # Tier 6 rails: kill switch, audit log + cost tally, and the single confirmation gate.
-    killswitch = KillSwitch(config.state_dir / "killswitch.json")
-    audit = AuditLog(
-        config.state_dir / "audit.log",
-        input_price_per_mtok=config.input_price_per_mtok,
-        output_price_per_mtok=config.output_price_per_mtok,
-    )
-    gate = ConfirmationGate(config, killswitch, audit)
-
-    # Tier 4 long-term memory: loaded into the system prompt each turn.
-    memory = MemoryStore(config.memory_path)
-
-    agent = Agent(
-        provider, config,
-        registry=build_registry(config, memory),
-        gate=gate, audit=audit, memory=memory,
-    )
-    run_repl(agent, config, killswitch, audit)
+    core = build_core(config)
+    run_repl(core.agent, core.config, core.killswitch, core.audit)
     return 0
 
 

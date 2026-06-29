@@ -85,6 +85,31 @@ class Config:
         rel = self.section("memory").get("path", "jarvis/memory/memory.md")
         return self.root / rel
 
+    # --- voice (Tier 3) ---
+    @property
+    def stt_sample_rate(self) -> int:
+        return int(self.section("voice").get("stt_sample_rate", 16000))
+
+    @property
+    def tts_sample_rate(self) -> int:
+        return int(self.section("voice").get("tts_sample_rate", 24000))
+
+    @property
+    def deepgram_model(self) -> str:
+        return self.section("voice").get("deepgram_model", "nova-3")
+
+    @property
+    def elevenlabs_voice_id(self) -> str:
+        return self.section("voice").get("elevenlabs_voice_id", "")
+
+    @property
+    def elevenlabs_model_id(self) -> str:
+        return self.section("voice").get("elevenlabs_model_id", "eleven_flash_v2_5")
+
+    @property
+    def push_to_talk_key(self) -> str:
+        return self.section("voice").get("push_to_talk_key", "f9")
+
     # --- rails (Tier 6 reads these; defined early so the gate has them) ---
     @property
     def confirm_tools(self) -> list[str]:

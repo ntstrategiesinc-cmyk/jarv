@@ -10,12 +10,12 @@ dependencies = [
     # Tier 2 — tools
     "openpyxl==3.1.5",
     "requests==2.32.3",
-    # Tier 3 — voice (pins finalized when reaching Tier 3; verified against installed pkg)
-    "deepgram-sdk>=4,<5",
-    "elevenlabs>=1.50",
-    "sounddevice>=0.5",
-    "numpy>=2.1",
-    "pynput>=1.7",
+    # Tier 3 — voice (pins verified against the installed packages)
+    "deepgram-sdk==7.4.0",
+    "elevenlabs==2.54.0",
+    "sounddevice==0.5.5",
+    "numpy==2.5.0",
+    "pynput==1.8.2",
     # Tier 5 — heartbeat
     "APScheduler>=3.10,<4",
 ]
