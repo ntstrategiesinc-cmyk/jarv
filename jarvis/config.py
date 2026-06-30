@@ -18,6 +18,21 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def real_desktop() -> Path:
+    """The Desktop the user actually sees — honors a OneDrive-redirected Desktop on Windows."""
+    try:
+        import winreg
+
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders",
+        )
+        value, _ = winreg.QueryValueEx(key, "Desktop")
+        return Path(os.path.expandvars(value))
+    except Exception:
+        return Path("~/Desktop").expanduser()
+
+
 @dataclass(frozen=True)
 class Config:
     """Parsed config.toml plus the repo root. Read-only.
@@ -89,7 +104,11 @@ class Config:
     @property
     def intake_dir(self) -> Path:
         raw = self.section("intake").get("dir", "media/intake")
-        p = Path(raw).expanduser()  # supports "~/Desktop/..." paths
+        idx = raw.lower().find("{desktop}")
+        if idx != -1:
+            rest = raw[idx + len("{desktop}"):].lstrip("/\\")  # keep original case
+            return real_desktop() / rest
+        p = Path(raw).expanduser()  # supports "~/..." paths
         return p if p.is_absolute() else self.root / p
 
 
