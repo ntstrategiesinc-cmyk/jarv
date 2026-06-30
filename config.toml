@@ -35,6 +35,11 @@ sheet_name = "Leads"
 # it by hand any time. Gitignored — it holds personal facts.
 path = "jarvis/memory/memory.md"
 
+[intake]
+# Drop furniture product photos here, each named "Title - Price.jpg"
+# (e.g. "Oak Dining Table - 499.jpg"). Jarvis reads the title and price from the filename.
+dir = "media/intake"
+
 [staging]
 # AI photo staging for the furniture pipeline. Key (OPENAI_API_KEY) lives in .env.
 provider = "openai"

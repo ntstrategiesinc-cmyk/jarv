@@ -85,7 +85,12 @@ class Config:
         rel = self.section("memory").get("path", "jarvis/memory/memory.md")
         return self.root / rel
 
-    # --- staging (furniture pipeline) ---
+    # --- intake / staging (furniture pipeline) ---
+    @property
+    def intake_dir(self) -> Path:
+        return self.root / self.section("intake").get("dir", "media/intake")
+
+
     @property
     def staging_model(self) -> str:
         return self.section("staging").get("model", "gpt-image-1")

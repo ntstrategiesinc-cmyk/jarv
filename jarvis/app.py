@@ -18,6 +18,7 @@ from .rails.audit import AuditLog
 from .rails.gate import ConfirmationGate
 from .rails.killswitch import KillSwitch
 from .tools.imagegen import build_image_tools
+from .tools.intake import build_intake_tools
 from .tools.leads import build_leads_tools
 from .tools.memory import build_memory_tools
 from .tools.registry import ToolRegistry
@@ -74,6 +75,7 @@ def build_core(config: Config | None = None) -> Core:
     registry.register_all(build_social_tools(config))
     registry.register_all(build_memory_tools(config, memory))
     registry.register_all(build_image_tools(config))
+    registry.register_all(build_intake_tools(config))
 
     agent = Agent(provider, config, registry=registry, gate=gate, audit=audit, memory=memory)
     return Core(config=config, agent=agent, killswitch=killswitch, audit=audit, memory=memory)
