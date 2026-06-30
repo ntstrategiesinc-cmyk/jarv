@@ -85,6 +85,27 @@ class Config:
         rel = self.section("memory").get("path", "jarvis/memory/memory.md")
         return self.root / rel
 
+    # --- staging (furniture pipeline) ---
+    @property
+    def staging_model(self) -> str:
+        return self.section("staging").get("model", "gpt-image-1")
+
+    @property
+    def staging_size(self) -> str:
+        return self.section("staging").get("size", "1024x1024")
+
+    @property
+    def staging_quality(self) -> str:
+        return self.section("staging").get("quality", "medium")
+
+    @property
+    def staging_dir(self) -> Path:
+        return self.root / self.section("staging").get("output_dir", "media/staged")
+
+    @property
+    def staging_prompt(self) -> str:
+        return self.section("staging").get("prompt", "Make this a clean, professional product photo.")
+
     # --- voice (Tier 3) ---
     @property
     def stt_sample_rate(self) -> int:

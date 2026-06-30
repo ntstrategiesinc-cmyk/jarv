@@ -37,5 +37,6 @@ env/
 jarvis/state/
 state/
 jarvis/memory/memory.md
+media/
 *.xlsx
 !leads.example.xlsx
