@@ -33,6 +33,16 @@ def real_desktop() -> Path:
         return Path("~/Desktop").expanduser()
 
 
+def _resolve_path(raw: str, root: Path) -> Path:
+    """Resolve a configured path: '{desktop}' -> real Desktop, '~' -> home, relative -> repo root."""
+    idx = raw.lower().find("{desktop}")
+    if idx != -1:
+        rest = raw[idx + len("{desktop}"):].lstrip("/\\")  # keep original case
+        return real_desktop() / rest
+    p = Path(raw).expanduser()
+    return p if p.is_absolute() else root / p
+
+
 @dataclass(frozen=True)
 class Config:
     """Parsed config.toml plus the repo root. Read-only.
@@ -103,13 +113,7 @@ class Config:
     # --- intake / staging (furniture pipeline) ---
     @property
     def intake_dir(self) -> Path:
-        raw = self.section("intake").get("dir", "media/intake")
-        idx = raw.lower().find("{desktop}")
-        if idx != -1:
-            rest = raw[idx + len("{desktop}"):].lstrip("/\\")  # keep original case
-            return real_desktop() / rest
-        p = Path(raw).expanduser()  # supports "~/..." paths
-        return p if p.is_absolute() else self.root / p
+        return _resolve_path(self.section("intake").get("dir", "media/intake"), self.root)
 
 
     @property
@@ -126,7 +130,7 @@ class Config:
 
     @property
     def staging_dir(self) -> Path:
-        return self.root / self.section("staging").get("output_dir", "media/staged")
+        return _resolve_path(self.section("staging").get("output_dir", "media/staged"), self.root)
 
     @property
     def staging_prompt(self) -> str:

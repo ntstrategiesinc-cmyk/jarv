@@ -47,7 +47,7 @@ provider = "openai"
 model = "gpt-image-1"
 size = "1024x1024"        # 1024x1024 | 1536x1024 | 1024x1536 | auto
 quality = "medium"        # low | medium | high  (higher = better + costlier)
-output_dir = "media/staged"
+output_dir = "{desktop}/Jarvis Furniture/staged"
 # The staging instruction. Tune this to taste — it shapes how every photo is restyled.
 prompt = "Restage this furniture product as a professional e-commerce marketing photo: place the exact item in a tastefully designed, well-lit interior appropriate to the piece, with clean uncluttered composition and realistic shadows and perspective. Keep the product's shape, color, material, and proportions EXACTLY as in the original photo. Photorealistic, high-end catalog style."
 

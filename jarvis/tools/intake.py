@@ -16,13 +16,18 @@ IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 def parse_listing(filename: str) -> tuple[str, str | None]:
-    """Split 'Oak Dining Table - 499.jpg' into ('Oak Dining Table', '499'). Price may be None."""
+    """Pull a title and price from a filename. Tolerant of many formats:
+    'Oak Dining Table - 499', 'sofa-$900', 'Velvet Chair $249.99', 'Bookshelf 179'.
+    The price is taken as the last number in the name; the title is what comes before it."""
     stem = Path(filename).stem
-    if " - " in stem:
-        title, raw_price = stem.rsplit(" - ", 1)  # last ' - ' separates the price
-        match = re.search(r"[\d,]+(?:\.\d+)?", raw_price)
-        price = match.group().replace(",", "") if match else None
-        return title.strip(), price
+    matches = list(re.finditer(r"\$?\s*([0-9][0-9,]*(?:\.[0-9]+)?)", stem))
+    if matches:
+        m = matches[-1]
+        price = m.group(1).replace(",", "")
+        title = stem[: m.start()].rstrip(" -–—_$").strip()
+        if not title:  # price was at the very front
+            title = stem[m.end():].strip()
+        return (title or stem.strip()), price
     return stem.strip(), None
 
 
