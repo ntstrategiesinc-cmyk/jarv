@@ -68,3 +68,58 @@ def build_intake_tools(config: Config) -> list[Tool]:
             needs_confirmation=False,
         )
     ]
+
+
+def build_workspace_tools(config: Config) -> list[Tool]:
+    def pending_approvals(args: dict) -> ToolResult:
+        d = config.pending_dir
+        d.mkdir(parents=True, exist_ok=True)
+        files = [p for p in sorted(d.iterdir()) if p.suffix.lower() in IMAGE_EXTS]
+        if not files:
+            return ToolResult.success(f"Nothing is pending approval ({d}).")
+        lines = [f"{i}. {p.name}   path: {p}" for i, p in enumerate(files, 1)]
+        return ToolResult.success(f"{len(files)} staged item(s) awaiting your approval to post:\n" + "\n".join(lines))
+
+    def lead_inbox(args: dict) -> ToolResult:
+        filt = (args.get("business") or "").strip().lower()
+        out: list[str] = []
+        for b in config.businesses:
+            if filt and filt not in b["name"].lower():
+                continue
+            folder = b["leads_folder"]
+            if folder is None:
+                continue
+            folder.mkdir(parents=True, exist_ok=True)
+            names = [p.name for p in sorted(folder.iterdir()) if p.is_file() and p.name.lower() != "readme.txt"]
+            line = f"- {b['name']}: {len(names)} file(s)"
+            if names:
+                line += " — " + ", ".join(names)
+            out.append(line)
+        if not out:
+            return ToolResult.success("No matching business found.")
+        return ToolResult.success("Lead inboxes:\n" + "\n".join(out))
+
+    return [
+        Tool(
+            name="pending_approvals",
+            description="List furniture items that are staged and waiting for the owner's approval before posting (the Pending Approval folder). Read-only.",
+            input_schema={"type": "object", "properties": {}},
+            handler=pending_approvals,
+            needs_confirmation=False,
+        ),
+        Tool(
+            name="lead_inbox",
+            description=(
+                "List files the owner dropped in their business lead folders (sales emails, leads). "
+                "Optionally filter to one business: 'Website & Sales', 'Solid Wood Builds & Sheds', or "
+                "'Furniture Staging'. Read-only."
+            ),
+            input_schema={
+                "type": "object",
+                "properties": {"business": {"type": "string", "description": "Optional business name to filter to."}},
+            },
+            handler=lead_inbox,
+            needs_confirmation=False,
+            returns_external_content=True,
+        ),
+    ]

@@ -115,6 +115,23 @@ class Config:
     def intake_dir(self) -> Path:
         return _resolve_path(self.section("intake").get("dir", "media/intake"), self.root)
 
+    @property
+    def pending_dir(self) -> Path:
+        """Where staged furniture images wait for the owner's approval (same as the staging output)."""
+        return self.staging_dir
+
+    @property
+    def businesses(self) -> list[dict]:
+        """The owner's businesses, each with a resolved leads_folder path."""
+        out = []
+        for b in self.data.get("businesses", []):
+            folder = b.get("leads_folder", "")
+            out.append({
+                "name": b.get("name", ""),
+                "leads_folder": _resolve_path(folder, self.root) if folder else None,
+            })
+        return out
+
 
     @property
     def staging_model(self) -> str:

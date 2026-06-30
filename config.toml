@@ -39,7 +39,18 @@ path = "jarvis/memory/memory.md"
 # Drop furniture product photos here, each named "Title - Price.jpg"
 # (e.g. "Oak Dining Table - 499.jpg"). Jarvis reads the title and price from the filename.
 # "{desktop}" = your real Desktop (works even if OneDrive manages it). Change it to any folder.
-dir = "{desktop}/Jarvis Furniture"
+dir = "{desktop}/Jarvis/Furniture/Intake"
+
+# The owner's businesses. Each has a Desktop folder where sales emails / leads are dropped.
+[[businesses]]
+name = "Website & Sales"
+leads_folder = "{desktop}/Jarvis/Leads/Website & Sales"
+[[businesses]]
+name = "Solid Wood Builds & Sheds"
+leads_folder = "{desktop}/Jarvis/Leads/Solid Wood Builds & Sheds"
+[[businesses]]
+name = "Furniture Staging"
+leads_folder = "{desktop}/Jarvis/Leads/Furniture Staging"
 
 [staging]
 # AI photo staging for the furniture pipeline. Key (OPENAI_API_KEY) lives in .env.
@@ -47,7 +58,7 @@ provider = "openai"
 model = "gpt-image-1"
 size = "1024x1024"        # 1024x1024 | 1536x1024 | 1024x1536 | auto
 quality = "medium"        # low | medium | high  (higher = better + costlier)
-output_dir = "{desktop}/Jarvis Furniture/staged"
+output_dir = "{desktop}/Jarvis/Furniture/Pending Approval"
 # The staging instruction. Tune this to taste — it shapes how every photo is restyled.
 prompt = "Restage this furniture product as a professional e-commerce marketing photo: place the exact item in a tastefully designed, well-lit interior appropriate to the piece, with clean uncluttered composition and realistic shadows and perspective. Keep the product's shape, color, material, and proportions EXACTLY as in the original photo. Photorealistic, high-end catalog style."
 
