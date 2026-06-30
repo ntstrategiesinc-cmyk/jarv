@@ -88,7 +88,9 @@ class Config:
     # --- intake / staging (furniture pipeline) ---
     @property
     def intake_dir(self) -> Path:
-        return self.root / self.section("intake").get("dir", "media/intake")
+        raw = self.section("intake").get("dir", "media/intake")
+        p = Path(raw).expanduser()  # supports "~/Desktop/..." paths
+        return p if p.is_absolute() else self.root / p
 
 
     @property

@@ -38,7 +38,8 @@ path = "jarvis/memory/memory.md"
 [intake]
 # Drop furniture product photos here, each named "Title - Price.jpg"
 # (e.g. "Oak Dining Table - 499.jpg"). Jarvis reads the title and price from the filename.
-dir = "media/intake"
+# "~" = your home folder, so this is your Desktop. Change it to any folder you like.
+dir = "~/Desktop/Jarvis Furniture"
 
 [staging]
 # AI photo staging for the furniture pipeline. Key (OPENAI_API_KEY) lives in .env.
