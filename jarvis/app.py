@@ -22,6 +22,7 @@ from .tools.imagegen import build_image_tools
 from .tools.instagram import build_instagram_tools
 from .tools.intake import build_intake_tools, build_workspace_tools
 from .tools.leads import build_leads_tools
+from .tools.leadwork import build_leadwork_tools
 from .tools.memory import build_memory_tools
 from .tools.registry import ToolRegistry
 from .tools.social import build_social_tools
@@ -74,6 +75,7 @@ def build_core(config: Config | None = None) -> Core:
 
     registry = ToolRegistry()
     registry.register_all(build_leads_tools(config))
+    registry.register_all(build_leadwork_tools(config))
     registry.register_all(build_social_tools(config))
     registry.register_all(build_memory_tools(config, memory))
     registry.register_all(build_image_tools(config))
