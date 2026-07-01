@@ -32,11 +32,18 @@ class ImageStager:
         self.quality = quality
 
     def stage(self, image_path: str, prompt: str) -> bytes:
-        """Return PNG bytes of the staged image."""
+        """Edit an existing photo (e.g. stage a product). Returns PNG bytes."""
         with open(image_path, "rb") as f:
             resp = self._client.images.edit(
                 model=self.model, image=f, prompt=prompt, size=self.size, quality=self.quality
             )
+        return base64.b64decode(resp.data[0].b64_json)
+
+    def generate(self, prompt: str) -> bytes:
+        """Create a brand-new image from a text prompt (e.g. original Instagram content)."""
+        resp = self._client.images.generate(
+            model=self.model, prompt=prompt, size=self.size, quality=self.quality
+        )
         return base64.b64decode(resp.data[0].b64_json)
 
 

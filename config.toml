@@ -52,6 +52,11 @@ leads_folder = "{desktop}/Jarvis/Leads/Solid Wood Builds & Sheds"
 name = "Furniture Staging"
 leads_folder = "{desktop}/Jarvis/Leads/Furniture Staging"
 
+[instagram]
+# Jarvis's OWN original Instagram content to grow followers (design tips, room inspiration,
+# trends, engagement posts) — SEPARATE from product listings. Not the product photos.
+dir = "{desktop}/Jarvis/Instagram"
+
 [staging]
 # AI photo staging for the furniture pipeline. Key (OPENAI_API_KEY) lives in .env.
 provider = "openai"

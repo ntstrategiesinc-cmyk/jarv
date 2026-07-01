@@ -150,6 +150,10 @@ class Config:
         return _resolve_path(self.section("staging").get("output_dir", "media/staged"), self.root)
 
     @property
+    def instagram_dir(self) -> Path:
+        return _resolve_path(self.section("instagram").get("dir", "media/instagram"), self.root)
+
+    @property
     def staging_prompt(self) -> str:
         return self.section("staging").get("prompt", "Make this a clean, professional product photo.")
 
