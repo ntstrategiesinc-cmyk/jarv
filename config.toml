@@ -29,6 +29,8 @@ confirm_timeout_seconds = 120
 # Spreadsheet the lead tools read and write.
 workbook_path = "leads.xlsx"
 sheet_name = "Leads"
+# Folder for lead-generation content (ads, flyers, listings, outreach, referral offers).
+content_dir = "{desktop}/Jarvis/Leads/Lead Content"
 
 [memory]
 # Long-term memory: a plain, human-readable file (one durable fact per line). Open and edit

@@ -101,6 +101,10 @@ class Config:
         return self.section("leads").get("sheet_name", "Leads")
 
     @property
+    def lead_content_dir(self) -> Path:
+        return _resolve_path(self.section("leads").get("content_dir", "media/lead_content"), self.root)
+
+    @property
     def graph_api_version(self) -> str:
         return self.section("social").get("graph_api_version", "v22.0")
 

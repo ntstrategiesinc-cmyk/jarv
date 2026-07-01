@@ -77,7 +77,40 @@ def build_leadwork_tools(config: Config) -> list[Tool]:
         path.write_text(content, encoding="utf-8")
         return ToolResult.success(f"Saved draft to {path}. The owner can review and send it.")
 
+    def save_lead_content(args: dict) -> ToolResult:
+        content = (args.get("content") or "").strip()
+        name = (args.get("name") or "").strip()
+        if not content or not name:
+            return ToolResult.error("Provide a name and the content.")
+        business = (args.get("business") or "").strip()
+        out = config.lead_content_dir
+        if business:
+            out = out / _safe(business)
+        out.mkdir(parents=True, exist_ok=True)
+        path = out / f"{_safe(name)}.txt"
+        path.write_text(content, encoding="utf-8")
+        return ToolResult.success(f"Saved lead-generation content to {path}.")
+
     return [
+        Tool(
+            name="save_lead_content",
+            description=(
+                "Save lead-generation marketing content (an ad, flyer, Marketplace listing, Google "
+                "Business post, referral offer, email, or outreach template) to the Lead Content folder, "
+                "optionally under a business. Use to build up ready-to-use content that brings in customers."
+            ),
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "Short name, e.g. 'realtor-outreach' or 'marketplace-listing'."},
+                    "business": {"type": "string", "description": "Which business (optional): Website & Sales, Solid Wood Builds & Sheds, or Furniture Staging."},
+                    "content": {"type": "string", "description": "The full content to save."},
+                },
+                "required": ["name", "content"],
+            },
+            handler=save_lead_content,
+            needs_confirmation=False,
+        ),
         Tool(
             name="read_lead",
             description=(
