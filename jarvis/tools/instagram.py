@@ -54,7 +54,59 @@ def build_instagram_tools(config: Config) -> list[Tool]:
             f"The owner can post it from their phone."
         )
 
+    def create_reel_pack(args: dict) -> ToolResult:
+        name = (args.get("name") or "").strip()
+        hook = (args.get("hook") or "").strip()
+        if not name or not hook:
+            return ToolResult.error("Provide a name and a hook for the reel.")
+        script = (args.get("script") or "").strip()
+        shot_list = (args.get("shot_list") or "").strip()
+        audio = (args.get("audio") or "").strip()
+        caption = (args.get("caption") or "").strip()
+
+        out_dir = config.instagram_dir
+        out_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+        lines = [f"===== REEL: {name} =====", "", f"HOOK (first second on screen): {hook}", ""]
+        if script:
+            lines += ["ON-SCREEN TEXT / SCRIPT:", script, ""]
+        if shot_list:
+            lines += ["WHAT TO FILM:", shot_list, ""]
+        if audio:
+            lines += [f"TRENDING AUDIO IDEA: {audio}", ""]
+        if caption:
+            lines += ["CAPTION:", caption, ""]
+        lines += ["HOW: film the clips (or use photos) in Instagram's Reel maker, add the audio, post."]
+
+        path = out_dir / f"REEL - {_safe(name)} - {stamp}.txt"
+        path.write_text("\n".join(lines), encoding="utf-8")
+        return ToolResult.success(f"Saved a ready-to-film Reel pack to {path}.")
+
     return [
+        Tool(
+            name="create_reel_pack",
+            description=(
+                "Create a ready-to-film Instagram Reel pack to grow followers: a scroll-stopping hook, "
+                "on-screen text/script, what to film, a trending-audio suggestion, and a caption. The "
+                "owner films it on their phone in about a minute. Great for 'this or that', tips, and "
+                "trend-based growth content."
+            ),
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "Short slug for the reel."},
+                    "hook": {"type": "string", "description": "The first-second hook that stops the scroll."},
+                    "script": {"type": "string", "description": "On-screen text beats / short script."},
+                    "shot_list": {"type": "string", "description": "What to film (or which photos to use)."},
+                    "audio": {"type": "string", "description": "Trending audio suggestion."},
+                    "caption": {"type": "string", "description": "Caption with hashtags and an engagement question."},
+                },
+                "required": ["name", "hook"],
+            },
+            handler=create_reel_pack,
+            needs_confirmation=False,
+        ),
         Tool(
             name="create_instagram_post",
             description=(
